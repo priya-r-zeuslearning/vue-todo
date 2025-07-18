@@ -1,98 +1,54 @@
 <template>
   <div class="todo-container">
-    <button @click="showForm = true" class="open-btn">+ Add Todo</button>
+    <button @click="showForm = true" class="open-btn">+ New Group</button>
 
     <!-- Modal Overlay -->
     <div v-if="showForm" class="modal-overlay" @click.self="showForm = false">
-      <form class="todo-form" @submit.prevent="addTodo">
-        <h2>Add New Todo</h2>
+      <form class="todo-form" @submit.prevent="addGroup">
+        <h2>Add New Group</h2>
 
         <div class="form-group">
           <label for="todo-name">Name:</label>
           <input
-            id="todo-name"
+            id="group-name"
             type="text"
-            placeholder="Enter todo"
-            v-model="todo"
+            placeholder="Enter Group Name"
+            v-model="groupName"
             tabindex="1"
             required
             autocomplete="off"
           />
         </div>
-
         <div class="form-group">
-          <label for="todo-desc">Description:</label>
-          <input
-            id="todo-desc"
-            type="text"
-            placeholder="Enter description"
-            v-model="todo_desc"
-            tabindex="2"
-            autocomplete="off"
-          />
+            <label for="group-color">Color:</label>
+            <input type="color" id="group-color" v-model="groupColor" tabindex="2" required autocomplete="off">
+            <p>Selected Color: {{ groupColor }}</p>
         </div>
-
-        <div class="form-group">
-          <label for="due-date">Due Date:</label>
-          <input
-            id="due-date"
-            type="date"
-            v-model="dueDate"
-            tabindex="3"
-            required
-          />
-        </div>
-        <div>
-          <label for="groups">Group</label>
-          <select name="groups" id="groups" v-model="groupId">
-            <option
-              v-for="group in $store.state.groups"
-              :key="group.id"
-              :value="Number(group.id)"
-            >
-              {{ group.name }} - {{ group.id}}
-            </option>
-          </select>
-          <p>Selected Group ID: {{ groupId }}</p>
-
-        </div>
-
-        <button type="submit" class="btn-submit" tabindex="4">Add Todo</button>
-        <button type="button" class="btn-cancel" @click="showForm = false">
-          Cancel
-        </button>
+        <button type="submit" class="btn-submit" tabindex="4">Add Group</button>
+        <button type="button" class="btn-cancel" @click="showForm = false">Cancel</button>
       </form>
     </div>
   </div>
 </template>
 
+
 <script>
 export default {
   data() {
     return {
-      todo: "",
-      todo_desc: "",
-      dueDate: "",
-      completed: false,
-      groupId: null,
-      showForm: false,
+      groupName: '',
+      groupColor: '',
+      showForm: false
     };
   },
-  methods: {
-    addTodo() {
-      if (this.todo.trim() === "") return;
-      console.log(this.groupId); //return if feild is empty
-      this.$store.dispatch("addAsync", {
-        todo: this.todo,
-        desc: this.todo_desc,
-        dueDate: this.dueDate,
-        groupId: this.groupId,
-        completed: false,
-      });
-
-      this.todo = "";
-      this.todo_desc = "";
-      this.dueDate = "";
+    methods: {
+    addGroup() {
+        if (this.groupName.trim() === "" || this.groupColor.trim() === "") return;
+      console.log(this.groupName, this.groupColor);
+      this.$store.dispatch('addGroupAsync', { groupName: this.groupName, groupColor: this.groupColor });
+      console.log("Group added");
+        this.groupName = "";
+        this.groupColor = "";
       this.showForm = false;
     },
   },
@@ -104,13 +60,13 @@ export default {
   display: flex;
   justify-content: center;
   margin: 40px 0;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .open-btn {
   padding: 12px 20px;
   font-size: 16px;
-  background-color: #4a90e2;
+  background-color: #1a923e;
   color: white;
   border: none;
   border-radius: 10px;
@@ -120,7 +76,7 @@ export default {
 }
 
 .open-btn:hover {
-  background-color: #357abd;
+  background-color: #196d2e;
 }
 
 /* Modal overlay */
@@ -178,8 +134,7 @@ label {
   font-size: 14px;
 }
 
-input[type="text"],
-input[type="date"] {
+input[type="text"] {
   padding: 10px 14px;
   font-size: 15px;
   border: 1.8px solid #ccc;
@@ -188,8 +143,7 @@ input[type="date"] {
   outline-offset: 2px;
 }
 
-input[type="text"]:focus,
-input[type="date"]:focus {
+input[type="text"]:focus{
   border-color: #4a90e2;
   box-shadow: 0 0 8px rgba(74, 144, 226, 0.3);
   outline: none;

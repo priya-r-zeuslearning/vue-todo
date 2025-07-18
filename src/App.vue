@@ -2,7 +2,11 @@
   <div id="app">
     <h1>Todo List</h1>
 
-    <AddTodo />
+    <div class="add-btns">
+       <AddTodo />
+    <AddGroup/>
+    </div>
+   
 
     <div class="stats">
       <p>Total Tasks: <strong>{{ todos.length }}</strong></p>
@@ -14,7 +18,7 @@
       There are no todos
     </p>
 
-    <TodoList />
+    <TodoList v-if=" todos.length > 0"/>
   </div>
 </template>
 
@@ -22,12 +26,14 @@
 import { mapGetters, mapState } from "vuex";
 import AddTodo from "./components/AddTodo.vue";
 import TodoList from "./components/TodoList.vue";
+import AddGroup from "./components/AddGroup.vue";
 
 export default {
   name: "App",
   components: {
     AddTodo,
     TodoList,
+    AddGroup
   },
   computed: {
     ...mapState(["todos"]),
@@ -38,7 +44,7 @@ export default {
 
 <style scoped>
 #app {
-  max-width: 500px;
+  max-width: 100vw;
   margin: 40px auto;
   padding: 0 20px;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -73,7 +79,10 @@ h1 {
   color: #222;
   font-weight: 600;
 }
-
+.add-btns{
+  display: flex;
+  gap: 10px;
+}
 .no-todos-msg {
   margin: 20px 0;
   font-style: italic;

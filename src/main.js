@@ -8,6 +8,12 @@ new Vue({
   store,
   render: h => h(App),
   created() {
-    this.$store.dispatch('initTodo');
+    try {
+      this.$store.dispatch('initTodo');
+      console.log("All Done");
+    } catch (error) {
+      console.log(error);
+    }
+ 
   }
 }).$mount('#app')

@@ -1,10 +1,6 @@
 <template>
   <div id="list">
-    <div class="controls">
-      <!-- <button class="toggle-btn" @click="toggleAll">
-        {{ showCompleted ? "Hide Completed" : "Show Completed" }}
-      </button> -->
-    </div>
+
 
     <ul>
       <TodoItem
@@ -54,7 +50,7 @@ export default {
 
 <style scoped>
 #list {
-  width: 100%;
+  width: 80%;
   /* min-height: 100vh; */
   display: flex;
   flex-direction: column;
@@ -64,12 +60,7 @@ export default {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.controls {
-  margin-bottom: 20px;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
+
 
 .toggle-btn {
   padding: 10px 24px;
@@ -89,7 +80,7 @@ export default {
 }
 
 ul {
-  width: 360px;
+  width: 80%;
   max-width: 90vw;
   height: 400px;
   background-color: #fff;

@@ -2,22 +2,75 @@ let db;
 
 export function openDB() {
     return new Promise((resolve, reject) => {
-        const request = window.indexedDB.open('TodoDB', 2);
+        const request = window.indexedDB.open('TodoDB', 4); // bump version if needed
+
         request.onerror = () => {
             reject(new Error('Error opening IndexedDB database'));
-        } 
+        };
+
         request.onsuccess = (e) => {
             db = e.target.result;
             console.log("Successfully opened IndexedDB database");
             resolve();
-        }
-    request.onupgradeneeded = (e) => {
-    db = e.target.result;
-    const store = db.createObjectStore("todos", { keyPath: "id" });
-    store.createIndex("idIndex", "id", { unique: true }); 
-    console.log("Successfully created object store and index");
-};
+        };
 
+        request.onupgradeneeded = (e) => {
+            db = e.target.result;
+
+            // Create "todos" store if not already present
+            if (!db.objectStoreNames.contains("todos")) {
+                const todoStore = db.createObjectStore("todos", { keyPath: "id" });
+                todoStore.createIndex("idIndex", "id", { unique: true });
+                console.log("Created 'todos' object store and index");
+            }
+
+            // Create "groups" store if not already present
+            if (!db.objectStoreNames.contains("groups")) {
+                const groupStore = db.createObjectStore("groups", { keyPath: "id" });
+                groupStore.createIndex("idIndex", "id", { unique: true }); // Optional index
+                console.log("Created 'groups' object store");
+            }
+        };
+    });
+}
+
+export function addGroup(group) {
+    return new Promise((resolve, reject) => {
+        
+        const tx = db.transaction("groups", "readwrite");
+        const store = tx.objectStore("groups");
+        console.log(group, "FROM IndexedDB");
+        const request = store.add(group);
+        request.onsuccess = () => {
+            console.log("Group added to IndexedDB");
+            resolve(group);  // resolve with the full group object
+        }
+        request.onerror = (event) => {
+            console.error(event.target.error);
+            reject(new Error('Error adding group to IndexedDB'));
+        }
+    })
+}
+export function getGroups() {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction("groups", "readonly");
+        const store = tx.objectStore("groups");
+        const index = store.index("idIndex");
+        const cursorRequest = index.openCursor(null, "prev");
+        const groups = [];
+        cursorRequest.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (cursor) {
+                groups.push(cursor.value);
+                cursor.continue();
+            } else {
+                console.log("Groups retrieved from IndexedDB");
+                resolve(groups);
+            }
+        }
+        cursorRequest.onerror = () => {
+            reject(new Error('Error retrieving groups from IndexedDB'));
+        }
     })
 }
 export function addTodo(todoObj) {
