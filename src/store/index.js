@@ -7,17 +7,20 @@ import {
   updateTodo,
   openDB,
   addGroup,
-  getGroups
+  getGroups,
+  deleteGroup,
 } from "./indexedDB";
 
 Vue.use(Vuex);
 
 let id = 0; // To keep track of next unique id
-let groupID = 0;
+let groupId = 0;
 export default new Vuex.Store({
   state: {
     todos: [],
     groups: [],
+    editingTodo: null,
+    showForm: false,
   },
 
   mutations: {
@@ -43,19 +46,34 @@ export default new Vuex.Store({
     SET_GROUPS(state, groups) {
       state.groups = groups;
       if (groups.length > 0) {
-        groupID = Math.max(...groups.map((g) => g.id)) + 1;
+        groupId = Math.max(...groups.map((g) => g.id)) + 1;
       }
+    },
+    SET_SHOW_FORM(state, value) {
+      state.showForm = value;
+    },
+    TOGGLE_FORM(state) {
+      state.showForm = !state.showForm;
+    },
+    START_EDITING(state, todo) {
+      state.editingTodo = { ...todo };
+    },
+    CLEAR_EDITING(state) {
+      state.editingTodo = null;
     },
     // },
     ADD_GROUP(state, group) {
       state.groups.push(group);
       if (state.groups.length > 0) {
-        groupID = Math.max(...state.groups.map((g) => g.id)) + 1;
+        groupId = Math.max(...state.groups.map((g) => g.id)) + 1;
       }
     },
 
     DELETE_TODO(state, idToDelete) {
       state.todos = state.todos.filter((todo) => todo.id !== idToDelete);
+    },
+    DELETE_GROUP(state, idToDelete) {
+      state.groups = state.groups.filter((group) => group.id !== idToDelete);
     },
 
     TOGGLE_TODO(state, idToToggle) {
@@ -67,6 +85,46 @@ export default new Vuex.Store({
   },
 
   actions: {
+    /**
+     *
+     * @param {Function} commit - Commit function to mutate the Vuex state
+     * @param {Number} idToDelete - id of the group to be deleted
+     */
+    deleteGroupAsync({ commit }, idToDelete) {
+      deleteGroup(idToDelete);
+      commit("DELETE_GROUP", idToDelete);
+    },
+    /**
+     *
+     * @param {Function} commit - Commit function to mutate the Vuex state
+     * @param {Object} todo - Todo item to edit
+     */
+    startEditing({ commit }, todo) {
+      commit("START_EDITING", todo);
+      this.dispatch("showFormAction");
+    },
+
+    /**
+     * Clears the editing state and hides the form.
+     *
+     * @param {Object} context - The Vuex context object, destructured to access the commit function.
+     */
+    clearEditing({ commit }) {
+      commit("CLEAR_EDITING");
+      this.dispatch("hideForm");
+    },
+
+    toggleForm({ commit }) {
+      // this.showForm = !this.showForm;
+      commit("TOGGLE_FORM");
+    },
+    showFormAction({ commit }) {
+      commit("SET_SHOW_FORM", true);
+    },
+    hideForm({ commit }) {
+      commit("CLEAR_EDITING");
+      commit("SET_SHOW_FORM", false);
+    },
     // Initialize Vuex state from IndexedDB
     async initTodo({ commit }, retries = 3) {
       for (let i = 0; i < retries; i++) {
@@ -75,7 +133,7 @@ export default new Vuex.Store({
           break;
         } catch (error) {
           console.log("Attempt", i + 1, "to open IndexedDB database");
-          if(i === retries - 1) {
+          if (i === retries - 1) {
             console.error("Error opening IndexedDB database:", error);
             throw error;
           }
@@ -84,7 +142,7 @@ export default new Vuex.Store({
       }
       const todos = await getTodos();
       //temporaily
-      
+
       commit("SET_TODOS", todos);
       commit("SET_GROUPS", await getGroups());
     },
@@ -96,20 +154,22 @@ export default new Vuex.Store({
         todo: payload.todo, // string of todo text
         desc: payload.desc,
         dueDate: payload.dueDate,
-        groupID: payload.groupId,
+        groupId: payload.groupId,
+        priority: payload.priority,
         completed: false,
       };
-   
+
       await addTodo(todoObj);
       console.log(todoObj);
       const todos = await getTodos();
       commit("SET_TODOS", todos);
+      commit("CLEAR_EDITING");
     },
     async addGroupAsync({ commit }, newGroup) {
       const group = {
-        id: groupID++,
+        id: groupId++,
         name: newGroup.groupName,
-        color: newGroup.groupColor
+        color: newGroup.groupColor,
       };
       console.log(group);
       await openDB();
@@ -117,7 +177,11 @@ export default new Vuex.Store({
       const groups = await getGroups();
       commit("SET_GROUPS", groups);
     },
-
+    async editTodoAsync({ commit }, payload) {
+      await updateTodo(payload);
+      const todos = await getTodos();
+      commit("SET_TODOS", todos);
+    },
     // Delete todo from both IndexedDB and Vuex
     async deleteTodoAsync({ commit }, idToDelete) {
       await deleteTodo(idToDelete);
@@ -141,6 +205,10 @@ export default new Vuex.Store({
 
     pendingTodos(state) {
       return state.todos.filter((todo) => !todo.completed);
+    },
+
+    todosByGroup: (state) => (groupId) => {
+      return state.todos.filter((todo) => todo.groupId === groupId);
     },
   },
 });

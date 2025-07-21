@@ -18,7 +18,7 @@
       There are no todos
     </p>
 
-    <TodoList v-if=" todos.length > 0"/>
+    <TodoList v-if=" todos.length > 0" />
   </div>
 </template>
 
@@ -36,8 +36,8 @@ export default {
     AddGroup
   },
   computed: {
-    ...mapState(["todos"]),
-    ...mapGetters(["doneTodos", "pendingTodos"]),
+    ...mapState(["todos",]),
+    ...mapGetters(["doneTodos", "pendingTodos", ]),
   },
 };
 </script>

@@ -87,6 +87,20 @@ export function addTodo(todoObj) {
         }
     });
 }
+export function getTodo(id) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction("todos", "readonly");
+        const store = tx.objectStore("todos");
+        const request = store.get(id);
+        request.onsuccess = () => {
+            console.log("Todo retrieved from IndexedDB");
+            resolve(request.result);
+        }
+        request.onerror = () => {
+            reject(new Error('Error retrieving todo from IndexedDB'));
+        }
+    })
+}
 
 export function getTodos() {
     return new Promise((resolve, reject) => {
@@ -107,6 +121,20 @@ export function getTodos() {
         }
         cursorRequest.onerror = () => {
             reject(new Error('Error retrieving todos from IndexedDB'));
+        }
+    })
+}
+export function deleteGroup(id) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction("groups", "readwrite");
+        const store = tx.objectStore("groups");
+        const request = store.delete(id);
+        request.onerror = () => {
+            reject(new Error('Error deleting group from IndexedDB'));
+        }
+        request.onsuccess = () => {
+            console.log("Group deleted from IndexedDB");
+            resolve("Deleted Group");
         }
     })
 }

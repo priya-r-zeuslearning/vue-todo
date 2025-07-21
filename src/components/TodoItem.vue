@@ -12,11 +12,20 @@
       <span class="todo-text">{{ todo.todo }}</span>
       <span class="todo-desc">Description: {{ todo.desc }}</span>
       <span class="due-date">Due: {{ todo.dueDate }}</span>
+      <span :class="{ high: todo.priority === 'High', medium: todo.priority === 'Medium', low: todo.priority === 'Low' }" class="task-priority"> {{ todo.priority || '' }}</span>
     </div>
 
-    <button class="delete-btn" @click="$emit('delete-todo', todo.id)" aria-label="Delete todo">
+    <div class="buttons">
+      <button class="edit-btn" @click="$store.dispatch('startEditing', todo); $store.dispatch('showFormAction')">
+    <img src="@/assets/image.png" alt="Edit" height="20px" width="20px">
+    </button>
+  <button class="delete-btn" @click="$emit('delete-todo', todo.id)" aria-label="Delete todo">
       ✕
     </button>
+    
+    </div>
+  
+
   </li>
 </template>
 
@@ -39,25 +48,69 @@ export default {
   max-width: 100%;
   padding: 12px 16px;
   margin: 8px 0;
+  border-left: 4px solid #4a90e2;
   background-color: #fefefe;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   transition: background-color 0.25s ease;
 }
-
+.completed {
+  border-left: 4px solid #458f00da;
+}
 .todo-item:hover {
   background-color: #f0f4ff;
 }
+.buttons{
+  display: flex;
+  gap: 10px;
+}
+.task-priority{
+  font-size: 12px;
+  color: #666;
+  border-radius: 6px;
+  padding: 5px;
+  width: 50px;
+  font-weight: bold;
+  text-align: center;
 
+}
+.task-priority.high{
+  background-color: #f8d7da;
+  color: #721c24;
+}
+.task-priority.medium{
+  background-color: #fff3cd;
+  color: #856404;
+}
+.task-priority.low{
+  background-color: #d4edda;
+  color: #0f5132;
+}
 .todo-checkbox {
   width: 20px;
   height: 20px;
   margin-right: 15px;
   cursor: pointer;
-  accent-color: #4a90e2;
+  accent-color: #027912;
 }
-
+.edit-btn{
+background-color: #87dcf1;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  width: 30px;
+  height: 30px;
+  font-weight: bold;
+  font-size: 20px;
+  line-height: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+  user-select: none;
+}
 .todo-details {
   flex: 1;
   display: flex;

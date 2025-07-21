@@ -1,11 +1,11 @@
 <template>
   <div class="todo-container">
-    <button @click="showForm = true" class="open-btn">+ Add Todo</button>
+    <button @click="toggleForm" class="open-btn">+ Add Todo</button>
 
     <!-- Modal Overlay -->
-    <div v-if="showForm" class="modal-overlay" @click.self="showForm = false">
-      <form class="todo-form" @submit.prevent="addTodo">
-        <h2>Add New Todo</h2>
+    <div v-if="showForm" class="modal-overlay" @click.self="hideForm">
+      <form class="todo-form" @submit.prevent="submitTodo">
+        <h2>{{ isEditing ? 'Edit Todo' : 'Add New Todo' }}</h2>
 
         <div class="form-group">
           <label for="todo-name">Name:</label>
@@ -13,8 +13,7 @@
             id="todo-name"
             type="text"
             placeholder="Enter todo"
-            v-model="todo"
-            tabindex="1"
+            v-model="todo.todo"
             required
             autocomplete="off"
           />
@@ -26,8 +25,7 @@
             id="todo-desc"
             type="text"
             placeholder="Enter description"
-            v-model="todo_desc"
-            tabindex="2"
+            v-model="todo.desc"
             autocomplete="off"
           />
         </div>
@@ -37,28 +35,35 @@
           <input
             id="due-date"
             type="date"
-            v-model="dueDate"
-            tabindex="3"
+            v-model="todo.dueDate"
             required
           />
         </div>
-        <div>
+
+        <div class="form-group">
           <label for="groups">Group</label>
-          <select name="groups" id="groups" v-model="groupId">
+          <select id="groups" v-model="todo.groupId">
+            <option :value="null" disabled>-- Select Group --</option>
             <option
               v-for="group in $store.state.groups"
               :key="group.id"
               :value="Number(group.id)"
             >
-              {{ group.name }} - {{ group.id}}
+              {{ group.name }}
             </option>
           </select>
-          <p>Selected Group ID: {{ groupId }}</p>
-
+        </div>
+          <div class="priority" v-if="todo.groupId!=null">
+          <label for="priority">Priority:</label>
+          <button @click="todo.priority = 'High'" :class="{ active: todo.priority === 'High' }">High</button>
+          <button @click="todo.priority = 'Medium'" :class="{ active: todo.priority === 'Medium' }">Medium</button>
+          <button @click="todo.priority = 'Low'" :class="{ active: todo.priority === 'Low' }">Low</button>
         </div>
 
-        <button type="submit" class="btn-submit" tabindex="4">Add Todo</button>
-        <button type="button" class="btn-cancel" @click="showForm = false">
+        <button type="submit" class="btn-submit">
+          {{ isEditing ? 'Update Todo' : 'Add Todo' }}
+        </button>
+        <button type="button" class="btn-cancel" @click="cancelForm">
           Cancel
         </button>
       </form>
@@ -66,37 +71,59 @@
   </div>
 </template>
 
+
 <script>
+import { mapState, mapActions } from 'vuex';
+
 export default {
-  data() {
-    return {
-      todo: "",
-      todo_desc: "",
-      dueDate: "",
-      completed: false,
-      groupId: null,
-      showForm: false,
-    };
+  computed: {
+    ...mapState(["showForm"]),
+    todo: {
+      get() {
+        return this.$store.state.editingTodo || this.getDefaultTodo();
+      },
+      set(val) {
+        this.$store.commit("START_EDITING", val);
+      }
+    },
+    isEditing() {
+      return !!this.$store.state.editingTodo?.id;
+    }
   },
   methods: {
-    addTodo() {
-      if (this.todo.trim() === "") return;
-      console.log(this.groupId); //return if feild is empty
-      this.$store.dispatch("addAsync", {
-        todo: this.todo,
-        desc: this.todo_desc,
-        dueDate: this.dueDate,
-        groupId: this.groupId,
-        completed: false,
-      });
+    ...mapActions(["toggleForm", "hideForm", "showFormAction"]),
 
-      this.todo = "";
-      this.todo_desc = "";
-      this.dueDate = "";
-      this.showForm = false;
+    getDefaultTodo() {
+      return {
+        todo: '',
+        desc: '',
+        dueDate: '',
+        priority: '',
+        groupId: null
+      };
     },
-  },
+
+    submitTodo() {
+      if (this.isEditing) {
+        this.$store.dispatch("editTodoAsync", this.todo);
+      } else {
+    
+        this.$store.dispatch("addAsync", this.todo); // make a copy
+       
+      }
+      this.cancelForm();
+    },
+
+    cancelForm() {
+      this.hideForm(); 
+      this.$store.commit("CLEAR_EDITING");
+    }
+  }
 };
+
+
+
+
 </script>
 
 <style scoped>
@@ -110,7 +137,7 @@ export default {
 .open-btn {
   padding: 12px 20px;
   font-size: 16px;
-  background-color: #4a90e2;
+  background-color: #4A90E2;
   color: white;
   border: none;
   border-radius: 10px;
