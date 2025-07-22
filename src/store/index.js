@@ -9,6 +9,7 @@ import {
   addGroup,
   getGroups,
   deleteGroup,
+  getTodosbyGroupSorted,
 } from "./indexedDB";
 
 Vue.use(Vuex);
@@ -19,8 +20,10 @@ export default new Vuex.Store({
   state: {
     todos: [],
     groups: [],
+    groupTodos: {},
     editingTodo: null,
     showForm: false,
+    sortOrders: {},
   },
 
   mutations: {
@@ -32,7 +35,18 @@ export default new Vuex.Store({
      * @param {Object} state - The Vuex state object
      * @param {Array} todos - An array of todo objects to set in the state
      */
-
+    setGroupTodos(state, { groupId, todos }) {
+      state.groupTodos = {
+        ...state.groupTodos,
+        [groupId]: todos,
+      };
+    },
+    SET_SORT_ORDER(state, { groupId, order }) {
+      state.sortOrders = {
+        ...state.sortOrders,
+        [groupId]: order,
+      };
+    },
     SET_TODOS(state, todos) {
       state.todos = todos;
 
@@ -146,6 +160,30 @@ export default new Vuex.Store({
       commit("SET_TODOS", todos);
       commit("SET_GROUPS", await getGroups());
     },
+    async FetchGroupTodos({ commit }, { groupId, sortBy, direction }) {
+      const todos = await getTodosbyGroupSorted(groupId, sortBy, direction);
+      commit("setGroupTodos", { groupId, todos });
+    },
+    async refreshGroupTodos({ state, dispatch }, groupId) {
+      const sortOrder = state.sortOrders[groupId];
+      let sortBy = "id";
+      let direction = "prev";
+
+      if (sortOrder === "name") {
+        sortBy = "dueDate";
+      } else if (sortOrder === "priority") {
+        sortBy = "priority";
+        direction = "next";
+      } else if (sortOrder === "priority-desc") {
+        sortBy = "priority-desc";
+      }
+
+      await dispatch("FetchGroupTodos", {
+        groupId,
+        sortBy,
+        direction,
+      });
+    },
 
     // Add todo both to IndexedDB and Vuex
     async addAsync({ commit }, payload) {
@@ -163,6 +201,10 @@ export default new Vuex.Store({
       console.log(todoObj);
       const todos = await getTodos();
       commit("SET_TODOS", todos);
+      if (todoObj.groupId != null) {
+        await this.dispatch("refreshGroupTodos", todoObj.groupId);
+      }
+      commit("SET_SHOW_FORM", false);
       commit("CLEAR_EDITING");
     },
     async addGroupAsync({ commit }, newGroup) {
@@ -180,13 +222,30 @@ export default new Vuex.Store({
     async editTodoAsync({ commit }, payload) {
       await updateTodo(payload);
       const todos = await getTodos();
-      commit("SET_TODOS", todos);
+
+      if (payload.groupId != null) {
+        await this.dispatch("refreshGroupTodos", payload.groupId);
+      }
+            commit("SET_TODOS", todos);
     },
     // Delete todo from both IndexedDB and Vuex
-    async deleteTodoAsync({ commit }, idToDelete) {
-      await deleteTodo(idToDelete);
-      commit("DELETE_TODO", idToDelete);
-    },
+ async deleteTodoAsync({ commit, state, dispatch }, idToDelete) {
+  // Find the todo to get its groupId before deletion
+  const todoObj = state.todos.find(todo => todo.id === idToDelete);
+  if (!todoObj) return; // todo not found, exit early
+
+  // Delete from IndexedDB
+  await deleteTodo(idToDelete);
+
+  // Update Vuex state
+  commit("DELETE_TODO", idToDelete);
+
+  // Refresh group todos if belongs to a group
+  if (todoObj.groupId != null) {
+    await dispatch("refreshGroupTodos", todoObj.groupId);
+  }
+},
+
 
     // Toggle todo completion and update IndexedDB and Vuex
     async toggleTodoAsync({ commit, state }, idToToggle) {

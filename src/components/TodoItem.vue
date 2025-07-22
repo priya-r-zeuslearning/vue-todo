@@ -12,7 +12,7 @@
       <span class="todo-text">{{ todo.todo }}</span>
       <span class="todo-desc">Description: {{ todo.desc }}</span>
       <span class="due-date">Due: {{ todo.dueDate }}</span>
-      <span :class="{ high: todo.priority === 'High', medium: todo.priority === 'Medium', low: todo.priority === 'Low' }" class="task-priority"> {{ todo.priority || '' }}</span>
+      <span :class="{ high: todo.priority === 1, medium: todo.priority === 2, low: todo.priority === 3 , none: todo.priority === ''}" class="task-priority"> {{ todo.priority === 1 ? 'High' : todo.priority === 2 ? 'Medium' : todo.priority === 3 ? 'Low' : ' '}}</span>
     </div>
 
     <div class="buttons">
@@ -67,13 +67,16 @@ export default {
 }
 .task-priority{
   font-size: 12px;
-  color: #666;
+
   border-radius: 6px;
   padding: 5px;
   width: 50px;
   font-weight: bold;
   text-align: center;
 
+}
+.task-priority .none{
+  display: none;
 }
 .task-priority.high{
   background-color: #f8d7da;

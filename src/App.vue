@@ -14,11 +14,9 @@
       <p>Pending: <strong>{{ pendingTodos.length }}</strong></p>
     </div>
 
-    <p v-if="todos.length === 0" class="no-todos-msg">
-      There are no todos
-    </p>
+  
 
-    <TodoList v-if=" todos.length > 0" />
+    <TodoList />
   </div>
 </template>
 

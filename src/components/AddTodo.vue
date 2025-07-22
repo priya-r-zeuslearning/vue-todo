@@ -1,11 +1,11 @@
 <template>
   <div class="todo-container">
-    <button @click="toggleForm" class="open-btn">+ Add Todo</button>
+    <button @click="openAddForm" class="open-btn">+ Add Todo</button>
 
     <!-- Modal Overlay -->
     <div v-if="showForm" class="modal-overlay" @click.self="hideForm">
       <form class="todo-form" @submit.prevent="submitTodo">
-        <h2>{{ isEditing ? 'Edit Todo' : 'Add New Todo' }}</h2>
+        <h2>{{ isEditing ? "Edit Todo" : "Add New Todo" }}</h2>
 
         <div class="form-group">
           <label for="todo-name">Name:</label>
@@ -13,7 +13,7 @@
             id="todo-name"
             type="text"
             placeholder="Enter todo"
-            v-model="todo.todo"
+            v-model="localTodo.todo"
             required
             autocomplete="off"
           />
@@ -25,7 +25,7 @@
             id="todo-desc"
             type="text"
             placeholder="Enter description"
-            v-model="todo.desc"
+            v-model="localTodo.desc"
             autocomplete="off"
           />
         </div>
@@ -35,14 +35,15 @@
           <input
             id="due-date"
             type="date"
-            v-model="todo.dueDate"
+            min="2025-07-22"
+            v-model="localTodo.dueDate"
             required
           />
         </div>
 
         <div class="form-group">
           <label for="groups">Group</label>
-          <select id="groups" v-model="todo.groupId">
+          <select id="groups" v-model="localTodo.groupId">
             <option :value="null" disabled>-- Select Group --</option>
             <option
               v-for="group in $store.state.groups"
@@ -53,15 +54,33 @@
             </option>
           </select>
         </div>
-          <div class="priority" v-if="todo.groupId!=null">
+        <div class="priority" v-if="localTodo.groupId != null">
           <label for="priority">Priority:</label>
-          <button @click="todo.priority = 'High'" :class="{ active: todo.priority === 'High' }">High</button>
-          <button @click="todo.priority = 'Medium'" :class="{ active: todo.priority === 'Medium' }">Medium</button>
-          <button @click="todo.priority = 'Low'" :class="{ active: todo.priority === 'Low' }">Low</button>
+          <button
+            type="button"
+            @click.prevent="localTodo.priority = 1"
+            :class="{ active: localTodo.priority === 1 }"
+          >
+            High
+          </button>
+          <button
+            type="button"
+            @click.prevent="localTodo.priority = 2"
+            :class="{ active: localTodo.priority === 2 }"
+          >
+            Medium
+          </button>
+          <button
+            type="button"
+            @click.prevent="localTodo.priority = 3"
+            :class="{ active: localTodo.priority === 3 }"
+          >
+            Low
+          </button>
         </div>
 
         <button type="submit" class="btn-submit">
-          {{ isEditing ? 'Update Todo' : 'Add Todo' }}
+          {{ isEditing ? "Update Todo" : "Add Todo" }}
         </button>
         <button type="button" class="btn-cancel" @click="cancelForm">
           Cancel
@@ -71,59 +90,58 @@
   </div>
 </template>
 
-
 <script>
-import { mapState, mapActions } from 'vuex';
+import { mapState, mapActions } from "vuex";
 
 export default {
+  data() {
+    return {
+      localTodo: this.$store.state.editingTodo || this.getDefaultTodo(),
+    };
+  },
+  watch: {
+    "$store.state.editingTodo"(newVal) {
+      this.localTodo = newVal ? { ...newVal } : this.getDefaultTodo();
+    },
+  },
   computed: {
     ...mapState(["showForm"]),
-    todo: {
-      get() {
-        return this.$store.state.editingTodo || this.getDefaultTodo();
-      },
-      set(val) {
-        this.$store.commit("START_EDITING", val);
-      }
-    },
     isEditing() {
       return !!this.$store.state.editingTodo?.id;
-    }
+    },
   },
   methods: {
     ...mapActions(["toggleForm", "hideForm", "showFormAction"]),
 
     getDefaultTodo() {
       return {
-        todo: '',
-        desc: '',
-        dueDate: '',
-        priority: '',
-        groupId: null
+        todo: "",
+        desc: "",
+        dueDate: "",
+        priority: '3',
+        groupId: null,
       };
     },
-
-    submitTodo() {
+    openAddForm() {
+      this.$store.commit("CLEAR_EDITING");
+      this.localTodo = this.getDefaultTodo(); // reset local todo here
+      this.showFormAction();
+    },
+    async submitTodo() {
       if (this.isEditing) {
-        this.$store.dispatch("editTodoAsync", this.todo);
+        await this.$store.dispatch("editTodoAsync", this.localTodo);
       } else {
-    
-        this.$store.dispatch("addAsync", this.todo); // make a copy
-       
+        await this.$store.dispatch("addAsync", this.localTodo);
       }
       this.cancelForm();
     },
-
     cancelForm() {
-      this.hideForm(); 
+      this.hideForm();
       this.$store.commit("CLEAR_EDITING");
-    }
-  }
+      this.localTodo = this.getDefaultTodo(); // reset local todo here as well
+    },
+  },
 };
-
-
-
-
 </script>
 
 <style scoped>
@@ -137,13 +155,66 @@ export default {
 .open-btn {
   padding: 12px 20px;
   font-size: 16px;
-  background-color: #4A90E2;
+  background-color: #4a90e2;
   color: white;
   border: none;
   border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
   transition: background 0.3s ease;
+}
+/* Styling for <select> dropdown */
+select {
+  padding: 10px 14px;
+  font-size: 15px;
+  border: 1.8px solid #ccc;
+  border-radius: 8px;
+  background-color: white;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  appearance: none; /* Remove default arrow styling in most browsers */
+  outline: none;
+}
+
+select:focus {
+  border-color: #4a90e2;
+  box-shadow: 0 0 8px rgba(74, 144, 226, 0.3);
+}
+
+/* Priority Button Container */
+.priority {
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px;
+}
+
+.priority label {
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Priority buttons */
+.priority button {
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1.5px solid #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+  background-color: #f2f2f2;
+  color: #333;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.priority button:hover {
+  background-color: #e4e4e4;
+}
+
+.priority button.active {
+  background-color: #4a90e2;
+  border-color: #357abd;
+  color: white;
 }
 
 .open-btn:hover {
