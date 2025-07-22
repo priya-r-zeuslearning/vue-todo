@@ -20,7 +20,7 @@
         </div>
 
         <div class="form-group">
-          <label for="todo-desc">Description:</label>
+          <label for="todo-desc">Description</label>
           <input
             id="todo-desc"
             type="text"
