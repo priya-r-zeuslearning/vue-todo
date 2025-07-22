@@ -160,12 +160,12 @@ export function getTodosbyGroupSorted(
     request.onsuccess = (e) => {
       const cursor = e.target.result;
 
-   
+
       if (cursor) {
         todos.push(cursor.value);
         cursor.continue();
       } else {
-      
+
         if (sortBy === "priority") {
           todos.sort((a, b) => a.priority - b.priority);
         } else if (sortBy === "priority-desc") {

@@ -1,6 +1,5 @@
 <template>
   <div id="list">
-    <!-- <button class="toggle-btn" @click="toggleAll">{{ showCompleted ? "Hide Completed" : "Show Completed" }}</button> -->
     <ul>
       <li
         v-for="group in groups"
@@ -13,27 +12,23 @@
             {{ group.name }} ▼
           </h3>
           <h2 v-if="showGroup.includes(group.id)">
-            <label :for="'sort-' + group.id" style="margin-right: 8px"
-              >Sort by</label
-            >
+            <label :for="'sort-' + group.id" style="margin-right: 8px">Sort by</label>
             <select
               :id="'sort-' + group.id"
               @change="sortTodos(group.id)"
               v-model="sortOrders[group.id]"
             >
               <option disabled value="">Select</option>
-              <option value="name">Due Date</option>
+              <option value="dueDate">Due Date</option>
               <option value="priority-desc">Low → High</option>
               <option value="priority">High → Low</option>
             </select>
           </h2>
-          <!-- <button class="delete-group-btn" @click="deleteGroup(group.id)">Delete Group</button> -->
         </div>
 
         <div v-if="showGroup.includes(group.id)">
           <TodoItem
-            v-for="todo in groupTodos[group.id] ||
-            todos.filter((t) => t.groupId === group.id)"
+            v-for="todo in groupTodos[group.id] || todos.filter((t) => t.groupId === group.id)"
             :key="todo.id"
             :todo="todo"
             @toggle-todo="toggleTodo"
@@ -41,9 +36,10 @@
           />
         </div>
       </li>
+
       <li class="group-section">
         <div class="group-header">
-          <h3>Ungroupped Tasks</h3>
+          <h3>Ungrouped Tasks</h3>
         </div>
         <TodoItem
           v-for="todo in todos.filter((t) => t.groupId === null)"
@@ -60,7 +56,6 @@
 <script>
 import { mapGetters, mapState } from "vuex";
 import TodoItem from "./TodoItem.vue";
-// import { sort } from "core-js/core/array";
 
 export default {
   components: {
@@ -74,22 +69,25 @@ export default {
     };
   },
   computed: {
-    ...mapState(["todos", "groups", "groupTodos"]),
+    ...mapState(["todos", "groups", "groupTodos", "sortOrders:storeSortOrders"]),
     ...mapGetters(["pendingTodos", "doneTodos"]),
-    visibleTodos() {
-      return this.showCompleted
-        ? this.todos.filter((todo) => todo.completed)
-        : this.todos.filter((todo) => !todo.completed);
+  },
+  watch: {
+    // Keep local sortOrders in sync with Vuex
+    storeSortOrders: {
+      handler(newOrders) {
+        this.sortOrders = { ...newOrders };
+      },
+      immediate: true,
+      deep: true,
     },
   },
-
   methods: {
     toggleTodo(id) {
-      //becuase this update the plain todo list not the grouped one
       this.$store.dispatch("toggleTodoAsync", id).then(() => {
         const todo = this.todos.find((t) => t.id === id);
         if (todo && todo.groupId != null) {
-          this.sortTodos(todo.groupId); //refetch and re-sort the list
+          this.sortTodos(todo.groupId); // preserve sorting
         }
       });
     },
@@ -97,44 +95,52 @@ export default {
     deleteItem(id) {
       this.$store.dispatch("deleteTodoAsync", id);
     },
-    deleteGroup(id) {
-      this.$store.dispatch("deleteGroupAsync", id);
-    },
-    toggleAll() {
-      this.showCompleted = !this.showCompleted;
-    },
-    sortTodos(groupId) {
-      const sortOrder = this.sortOrders[groupId];
-      let sortByfunction = "id";
-      let directionfunction = "prev";
 
-      if (sortOrder === "name") sortByfunction = "dueDate";
-      else if (sortOrder === "priority") {
-        sortByfunction = "priority";
-        directionfunction = "next";
-      } else if (sortOrder === "priority-desc") {
-        sortByfunction = "priority-desc";
-        directionfunction = "prev";
-      }
-      this.$store.commit("SET_SORT_ORDER", { groupId, sortByfunction });
-
-      console.log(this.sortOrders);
-      this.$store.dispatch("FetchGroupTodos", {
-        groupId,
-        sortBy: sortByfunction,
-        direction: directionfunction,
-      });
-    },
     toggleGroup(id) {
       if (this.showGroup.includes(id)) {
         this.showGroup = this.showGroup.filter((g) => g !== id);
-        return;
+      } else {
+        this.showGroup.push(id);
+
+        // Set default sort when group is opened
+        if (!this.sortOrders[id]) {
+          this.sortOrders[id] = "dueDate"; // default sort
+          this.sortTodos(id);
+        }
       }
-      this.showGroup = [...this.showGroup, id];
+    },
+
+    sortTodos(groupId) {
+      const selected = this.sortOrders[groupId];
+
+      let sortBy = "id";
+      let direction = "prev";
+
+      if (selected === "dueDate") {
+        sortBy = "dueDate";
+        direction = "prev";
+      } else if (selected === "priority") {
+        sortBy = "priority";
+        direction = "next";
+      } else if (selected === "priority-desc") {
+        sortBy = "priority-desc";
+        direction = "prev";
+      }
+
+      // Save to Vuex sortOrders
+      this.$store.commit("SET_SORT_ORDER", { groupId, sortBy, direction });
+
+      // Fetch sorted todos
+      this.$store.dispatch("FetchGroupTodos", {
+        groupId,
+        sortBy,
+        direction,
+      });
     },
   },
 };
 </script>
+
 
 <style scoped>
 #list {

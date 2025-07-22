@@ -118,7 +118,7 @@ export default {
         todo: "",
         desc: "",
         dueDate: "",
-        priority: '3',
+        priority: 3,
         groupId: null,
       };
     },
