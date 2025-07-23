@@ -9,20 +9,13 @@
 
         <div class="form-group">
           <label for="todo-name">Name:</label>
-          <input
-            id="group-name"
-            type="text"
-            placeholder="Enter Group Name"
-            v-model="groupName"
-            tabindex="1"
-            required
-            autocomplete="off"
-          />
+          <input id="group-name" type="text" placeholder="Enter Group Name" v-model="groupName" tabindex="1" required
+            autocomplete="off" />
         </div>
         <div class="form-group">
-            <label for="group-color">Color:</label>
-            <input type="color" id="group-color" v-model="groupColor" tabindex="2" required autocomplete="off">
-            
+          <label for="group-color">Color:</label>
+          <input type="color" id="group-color" v-model="groupColor" tabindex="2" required autocomplete="off">
+
         </div>
         <button type="submit" class="btn-submit" tabindex="4">Add Group</button>
         <button type="button" class="btn-cancel" @click="showForm = false">Cancel</button>
@@ -41,14 +34,14 @@ export default {
       showForm: false
     };
   },
-    methods: {
+  methods: {
     addGroup() {
-        if (this.groupName.trim() === "" || this.groupColor.trim() === "") return;
+      if (this.groupName.trim() === "" || this.groupColor.trim() === "") return;
       console.log(this.groupName, this.groupColor);
       this.$store.dispatch('addGroupAsync', { groupName: this.groupName, groupColor: this.groupColor });
       console.log("Group added");
-        this.groupName = "";
-        this.groupColor = "";
+      this.groupName = "";
+      this.groupColor = "";
       this.showForm = false;
     },
   },
@@ -74,8 +67,9 @@ export default {
   font-weight: 600;
   transition: background 0.3s ease;
 }
+
 input[type="color"] {
-    width: 40px;
+  width: 40px;
   height: 40px;
   border: none;
   border-radius: 8px;
@@ -85,6 +79,7 @@ input[type="color"] {
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 
 }
+
 .open-btn:hover {
   background-color: #196d2e;
 }
@@ -119,6 +114,7 @@ input[type="color"] {
     opacity: 0;
     transform: translateY(-30px) scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -153,7 +149,7 @@ input[type="text"] {
   outline-offset: 2px;
 }
 
-input[type="text"]:focus{
+input[type="text"]:focus {
   border-color: #4a90e2;
   box-shadow: 0 0 8px rgba(74, 144, 226, 0.3);
   outline: none;

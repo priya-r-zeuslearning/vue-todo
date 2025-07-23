@@ -101,7 +101,7 @@
         <!-- Todos List -->
         <div v-if="showGroup.includes(group.id)">
           <TodoItem
-            v-for="todo in groupTodos[group.id] || todos.filter((t) => t.groupId === group.id)"
+            v-for="todo in filteredTodosByGroup[group.id]"
             :key="todo.id"
             :todo="todo"
             @toggle-todo="toggleTodo"
@@ -152,13 +152,36 @@ export default {
       "todos",
       "groups",
       "groupTodos",
-      "sortOrders:storeSortOrders",
+      "sortOrders:storeSortOrders"
     ]),
     ...mapGetters(["pendingTodos", "doneTodos"]),
+    filteredTodosByGroup() {
+      // Returns an object: { [groupId]: [filtered todos] }
+      const result = {};
+      this.groups.forEach(group => {
+        let groupTodos = this.groupTodos[group.id] || [];
+        // Apply filter if present
+        const filter = this.filterForms[group.id];
+        if (filter && (filter.dueDate || filter.priority || filter.status)) {
+          groupTodos = groupTodos.filter(todo => {
+            const dueMatch = filter.dueDate ? todo.dueDate === filter.dueDate : true;
+            const priorityMatch = filter.priority ? String(todo.priority) === String(filter.priority) : true;
+            const statusMatch =
+              filter.status === "1"
+                ? todo.completed === true
+                : filter.status === "2"
+                ? todo.completed === false
+                : true;
+            return dueMatch && priorityMatch && statusMatch;
+          });
+        }
+        result[group.id] = groupTodos;
+      });
+      return result;
+    },
   },
 
   watch: {
-    // Keep local sortOrders in sync with store
     storeSortOrders: {
       handler(newOrders) {
         this.sortOrders = { ...newOrders };
@@ -203,33 +226,8 @@ methods: {
     this.activeFilterGroup = null;
   },
 
-  applyFilter(groupId) {
-    const { dueDate, priority, status } = this.filterForms[groupId];
-
-    let filtered = this.todos.filter((todo) => {
-      const sameGroup = todo.groupId === groupId;
-
-      const dueMatch = dueDate ? todo.dueDate === dueDate : true;
-      const priorityMatch = priority
-        ? String(todo.priority) === String(priority)
-        : true;
-      const statusMatch =
-        status === "1"
-          ? todo.completed === true
-          : status === "2"
-          ? todo.completed === false
-          : true;
-
-      return sameGroup && dueMatch && priorityMatch && statusMatch;
-    });
-
-    // Sort the filtered list if a sort order exists
-    const lastSort = this.sortOrders[groupId];
-    if (lastSort) {
-      filtered = this.getSortedTodos(filtered, lastSort);
-    }
-
-    this.groupTodos[groupId] = filtered;
+  applyFilter() {
+    // Just update filterForms and trigger computed
     this.filterFormShow = false;
   },
 
@@ -239,16 +237,7 @@ methods: {
       priority: "",
       status: "",
     });
-
-    let groupList = this.todos.filter((todo) => todo.groupId === groupId);
-
-    // Sort if needed
-    const lastSort = this.sortOrders[groupId];
-    if (lastSort) {
-      groupList = this.getSortedTodos(groupList, lastSort);
-    }
-
-    this.groupTodos[groupId] = groupList;
+    this.$delete(this.sortOrders, groupId);
     this.filterFormShow = false;
   },
 
@@ -259,35 +248,20 @@ methods: {
 
   sortTodos(groupId, sortKey) {
     const selected = sortKey || this.sortOrders[groupId];
-
-    let sortBy = "id";
+    let sortBy = selected;
     let direction = "prev";
-
-    if (selected === "dueDate") {
-      sortBy = "dueDate";
-      direction = "prev";
-    } else if (selected === "priority") {
-      sortBy = "priority";
+    if (selected === "priority") {
       direction = "next";
     } else if (selected === "priority-desc") {
-      sortBy = "priority";
+      direction = "prev";
+    } else if (selected === "dueDate") {
       direction = "prev";
     }
-
-    // Save in store
     this.$store.dispatch("setSortOrder", {
       groupId,
-      sortBy: sortBy,
-      direction,
+      sortBy,
+      direction
     });
-
-    // Use current filtered list (if any) or all for that group
-    let currentList = this.groupTodos[groupId]
-      ? [...this.groupTodos[groupId]]
-      : this.todos.filter((todo) => todo.groupId === groupId);
-
-    const sorted = this.getSortedTodos(currentList, selected);
-    this.groupTodos[groupId] = sorted;
   },
 
   getSortedTodos(todos, selected) {
@@ -296,9 +270,9 @@ methods: {
     if (selected === "dueDate") {
       sorted.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
     } else if (selected === "priority") {
-      sorted.sort((a, b) => a.priority - b.priority); // High → Low
+      sorted.sort((a, b) => b.priority - a.priority); // High → Low
     } else if (selected === "priority-desc") {
-      sorted.sort((a, b) => b.priority - a.priority); // Low → High
+      sorted.sort((a, b) => a.priority - b.priority); // Low → High
     }
 
     return sorted;
