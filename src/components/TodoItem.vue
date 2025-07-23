@@ -16,7 +16,7 @@
     </div>
 
     <div class="buttons">
-      <button class="edit-btn" @click="$store.dispatch('startEditing', todo); $store.dispatch('showFormAction')">
+      <button class="edit-btn" v-if="!todo.completed" @click="$store.dispatch('startEditing', todo); $store.dispatch('showFormAction')">
     <img src="@/assets/image.png" alt="Edit" height="20px" width="20px">
     </button>
   <button class="delete-btn" @click="$emit('delete-todo', todo.id)" aria-label="Delete todo">

@@ -63,7 +63,7 @@ h1 {
   width: 100%;
   display: flex;
   justify-content: space-around;
-  margin-bottom: 20px;
+  margin-bottom: 5px;
   font-size: 16px;
   color: #555;
 }

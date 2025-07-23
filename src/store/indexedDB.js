@@ -2,7 +2,7 @@ let db;
 
 export function openDB() {
   return new Promise((resolve, reject) => {
-    const request = window.indexedDB.open("TodoDB", 7); // bump version if needed
+    const request = window.indexedDB.open("TodoDB", 8); // bump version if needed
 
     request.onerror = () => {
       reject(new Error("Error opening IndexedDB database"));
@@ -28,7 +28,9 @@ export function openDB() {
           todoStore.createIndex("groupIdIndex", "groupId", { unique: false });
         }
       }
-
+      if (!db.objectStoreNames.contains("sortOrders")) {
+        db.createObjectStore("sortOrders", { keyPath: "groupId" });
+      }
       // Create "groups" store if not already present
       if (!db.objectStoreNames.contains("groups")) {
         const groupStore = db.createObjectStore("groups", { keyPath: "id" });
@@ -38,7 +40,36 @@ export function openDB() {
     };
   });
 }
+export function saveSortOrders(groupId, sortBy, direction){
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("sortOrders", "readwrite");
+    const store = tx.objectStore("sortOrders");
+    const request = store.put({ groupId, sortBy, direction });
+    request.onerror = () => {
+      reject(new Error("Error saving sort order to IndexedDB"));
+    };
+    request.onsuccess = () => {
+      console.log("Sort order saved to IndexedDB");
+      resolve("Saved Sort Order");
+    };
+  })
+}
 
+export function getSortOrders() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("sortOrders", "readwrite");
+    const store = tx.objectStore("sortOrders");
+ 
+    const request = store.getAll();
+    request.onerror = () => {
+      reject(new Error("Error retrieving sort orders from IndexedDB"));
+    };
+    request.onsuccess = () => {
+      console.log("Sort orders retrieved from IndexedDB");
+      resolve(request.result);
+    };
+  });
+}
 export function addGroup(group) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction("groups", "readwrite");
@@ -160,12 +191,10 @@ export function getTodosbyGroupSorted(
     request.onsuccess = (e) => {
       const cursor = e.target.result;
 
-
       if (cursor) {
         todos.push(cursor.value);
         cursor.continue();
       } else {
-
         if (sortBy === "priority") {
           todos.sort((a, b) => a.priority - b.priority);
         } else if (sortBy === "priority-desc") {
@@ -197,11 +226,11 @@ export function deleteTodo(id) {
     };
   });
 }
-export function updateTodo(id) {
+export function updateTodo(todoObj) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction("todos", "readwrite");
     const store = tx.objectStore("todos");
-    const request = store.put(id);
+    const request = store.put(todoObj);
     request.onerror = () => {
       reject(new Error("Error updating todo from IndexedDB"));
     };

@@ -10,6 +10,8 @@ import {
   getGroups,
   deleteGroup,
   getTodosbyGroupSorted,
+  saveSortOrders,
+  getSortOrders,
 } from "./indexedDB";
 
 Vue.use(Vuex);
@@ -120,6 +122,7 @@ export default new Vuex.Store({
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       }
+  
       const todos = await getTodos();
       const groups = await getGroups();
       commit("SET_TODOS", todos);
@@ -144,11 +147,28 @@ export default new Vuex.Store({
       });
     },
 
-    setSortOrder({ commit, dispatch }, { groupId, sortBy, direction }) {
+    async setSortOrder({ commit, dispatch }, { groupId, sortBy, direction }) {
       commit("SET_SORT_ORDER", { groupId, sortBy, direction });
+      try {
+        await saveSortOrders(groupId, sortBy, direction);
+      } catch (error) {
+        console.error("Error saving sort order to IndexedDB:", error);
+      }
       dispatch("refreshGroupTodos", groupId);
     },
-
+    async loadSortOrders({ commit }) {
+      try {
+        await openDB();
+        const savedOrders = await getSortOrders();
+        savedOrders.forEach(({ groupId, sortBy, direction }) => {
+          commit("SET_SORT_ORDER", { groupId, sortBy, direction });
+          this.dispatch("refreshGroupTodos", groupId);
+        });
+        console.log("Sort orders loaded from IndexedDB", savedOrders);
+      } catch (error) {
+        console.error("Error retrieving sort orders from IndexedDB:", error);
+      }
+    },
     async addAsync({ commit, dispatch }, payload) {
       const todoObj = {
         id: id++,

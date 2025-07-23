@@ -10,6 +10,8 @@ new Vue({
   created() {
     try {
       this.$store.dispatch('initTodo');
+      // this.$store.dispatch('initGroup');
+      this.$store.dispatch('loadSortOrders');
       console.log("All Done");
     } catch (error) {
       console.log(error);

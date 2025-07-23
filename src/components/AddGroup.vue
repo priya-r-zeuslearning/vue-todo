@@ -22,7 +22,7 @@
         <div class="form-group">
             <label for="group-color">Color:</label>
             <input type="color" id="group-color" v-model="groupColor" tabindex="2" required autocomplete="off">
-            <p>Selected Color: {{ groupColor }}</p>
+            
         </div>
         <button type="submit" class="btn-submit" tabindex="4">Add Group</button>
         <button type="button" class="btn-cancel" @click="showForm = false">Cancel</button>
@@ -74,7 +74,17 @@ export default {
   font-weight: 600;
   transition: background 0.3s ease;
 }
+input[type="color"] {
+    width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  padding: 0;
+  cursor: pointer;
+  background: none;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 
+}
 .open-btn:hover {
   background-color: #196d2e;
 }
