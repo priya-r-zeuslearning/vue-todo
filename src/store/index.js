@@ -107,8 +107,7 @@ export default new Vuex.Store({
       commit("CLEAR_EDITING");
       commit("SET_SHOW_FORM", false);
     },
-
-    async initTodo({ commit }, retries = 3) {
+    async initDatabase({ dispatch }, retries = 3) {
       for (let i = 0; i < retries; i++) {
         try {
           await openDB();
@@ -122,7 +121,12 @@ export default new Vuex.Store({
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       }
-  
+
+      await dispatch("initTodo");
+      await dispatch("loadSortOrders");
+    },
+
+    async initTodo({ commit }) {
       const todos = await getTodos();
       const groups = await getGroups();
       commit("SET_TODOS", todos);
